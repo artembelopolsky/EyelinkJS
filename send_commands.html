@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EyeLink Command Sender Prototype</title>
+</head>
+<body>
+    <h1>Send Command to Simulated EyeLink</h1>
+    <input type="text" id="command" placeholder="Enter command">
+    <button onclick="sendCommand()">Send Command</button>
+
+    <script>
+        function sendCommand() {
+            const command = document.getElementById('command').value;
+            fetch('http://localhost:5000/send_command', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ command: command }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                alert('Command sent: ' + data.message);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>
