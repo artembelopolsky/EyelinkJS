@@ -1,5 +1,7 @@
 EyelinkJS project
 
+Testet with python 3.11.0
+
 ### Installation
 1. Create a virtual environment, activate it and install the requirements
 ```

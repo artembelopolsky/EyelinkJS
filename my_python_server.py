@@ -7,9 +7,7 @@ import os
 import pylink  # Uncomment if connecting to EyeLink
 from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy
 from psychopy import visual, core, event, monitors, gui
-import threading
 import multiprocessing
-# from PIL import Image  # for preparing the Host backdrop image
 
 # Set this variable to True to run the task in full screen mode
 # It is easier to debug the script in non-fullscreen mode
@@ -42,7 +40,45 @@ def parse_command(command):
     else:
         return command, None
     
+# def clear_screen(win):
+#     """ clear up the PsychoPy window"""
+
+#     win.fillColor = genv.getBackgroundColor()
+#     win.flip()
+
+# def abort_trial():
+#     """Ends recording """
+
+#     el_tracker = pylink.getEYELINK()
+
+#     # Stop recording
+#     if el_tracker.isRecording():
+#         # add 100 ms to catch final trial events
+#         pylink.pumpDelay(100)
+#         el_tracker.stopRecording()
+
+#     # clear the screen
+#     clear_screen(win)
+#     # Send a message to clear the Data Viewer screen
+#     bgcolor_RGB = (116, 116, 116)
+#     el_tracker.sendMessage('!V CLEAR %d %d %d' % bgcolor_RGB)
+
+#     # send a message to mark trial end
+#     el_tracker.sendMessage('TRIAL_RESULT %d' % pylink.TRIAL_ERROR)
+
+#     return pylink.TRIAL_ERROR
+
 def setup_calibration():
+    edf_file = 'avb.EDF'
+    print(f'Provided name for EDF file is: {edf_file}')
+    try:
+        el_tracker.openDataFile(edf_file)
+    except RuntimeError as err:
+        print(f'Error opening EDF file: {err}')
+        # Close the EyeLink connection if it exists
+        if el_tracker.isConnected():
+            el_tracker.close()
+
     # Step 4: set up a graphics environment for calibration
     #
     # Open a window, be sure to specify monitor parameters
@@ -156,20 +192,51 @@ def send_command():
                                                 
                         sys.exit()  # Exit the program
                 elif command_name == 'doTrackerSetup':
-                    # el_tracker.doTrackerSetup()
-                    # Run calibration in a separate processs 
+                    # Run calibration in a separate processs since it is using psychopy and creates its own window
                     calibration_process = multiprocessing.Process(target=setup_calibration)
                     calibration_process.start()
                     calibration_process.join()
                     print('Calibration started')
                 elif command_name == 'startRecording':
                     el_tracker.startRecording(1, 1, 1, 1)  
+                    # Allocate some time for the tracker to cache some samples
+                    pylink.pumpDelay(100)
                 elif command_name == 'stopRecording':
+                     # stop recording; add 100 msec to catch final events before stopping
+                    pylink.pumpDelay(100)
                     el_tracker.stopRecording()  
                 elif command_name == 'sendMessage' and argument:
                     el_tracker.sendMessage(argument)  
                 elif command_name == 'sendCommand' and argument:
                     el_tracker.sendCommand(argument)  
+                elif command_name == 'startTrial' and argument: # starting every trial, takes trialNr as argument
+                    # get a reference to the currently active EyeLink connection
+                    el_tracker = pylink.getEYELINK()
+                    # put the tracker in the offline mode first
+                    el_tracker.setOfflineMode()
+                    # send a "TRIALID" message to mark the start of a trial
+                    msg_trialID = f'TRIALID {argument}'
+                    el_tracker.sendMessage(msg_trialID)
+                    # record_status_message : show some info on the Host PC
+                    # here we show how many trials has been tested
+                    el_tracker.sendCommand("record_status_message '%s'" % msg_trialID)
+                    # Start recording
+                    # arguments: sample_to_file, events_to_file, sample_over_link,
+                    # event_over_link (1-yes, 0-no)
+                    try:
+                        el_tracker.startRecording(1, 1, 1, 1)
+                    except RuntimeError as error:
+                        print("ERROR:", error)
+                        # abort_trial()
+                        return pylink.TRIAL_ERROR
+
+                    # Allocate some time for the tracker to cache some samples
+                    pylink.pumpDelay(100)
+                elif command_name == 'terminateTask':
+                    # Close the edf data file on the Host
+                    el_tracker.closeDataFile()
+                    # Close the link to the tracker.
+                    el_tracker.close()
                 else:
                     return jsonify({'status': 'error', 'message': f'Unknown command: {command_name}'}), 400
 
