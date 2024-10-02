@@ -19,17 +19,24 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes, allowing all origins by default
 
 EYE_HOST_IP = '100.1.1.1'
+el_tracker = None # Declare globally, not here to ensure it's accessible in all routes
 
-if dummy_mode:
-    print("Running in dummy mode, EyeLink will not be connected")
-    el_tracker = None
-else:
-    try:
-        # Uncomment when not in dummy mode
-        el_tracker = pylink.EyeLink(EYE_HOST_IP)
-        pass
-    except RuntimeError as error:
-        print('ERROR:', error)
+# Global initialization of EyeLink tracker
+def initialize_eyelink():
+    global el_tracker   
+
+    if dummy_mode:
+        print("Running in dummy mode, EyeLink will not be connected")
+        el_tracker = None
+    else:
+        try:
+            # Uncomment when not in dummy mode
+            el_tracker = pylink.EyeLink(EYE_HOST_IP)
+            pass
+        except RuntimeError as error:
+            print('ERROR:', error)
+
+initialize_eyelink()
 
 def parse_command(command):
     match = re.match(r'(\w+)\((.*)\)', command)
@@ -39,7 +46,7 @@ def parse_command(command):
         return command_name, argument
     else:
         return command, None
-    
+        
 # def clear_screen(win):
 #     """ clear up the PsychoPy window"""
 
@@ -69,16 +76,7 @@ def parse_command(command):
 #     return pylink.TRIAL_ERROR
 
 def setup_calibration():
-    edf_file = 'avb.EDF'
-    print(f'Provided name for EDF file is: {edf_file}')
-    try:
-        el_tracker.openDataFile(edf_file)
-    except RuntimeError as err:
-        print(f'Error opening EDF file: {err}')
-        # Close the EyeLink connection if it exists
-        if el_tracker.isConnected():
-            el_tracker.close()
-
+    
     # Step 4: set up a graphics environment for calibration
     #
     # Open a window, be sure to specify monitor parameters
@@ -159,6 +157,8 @@ def setup_calibration():
 
 @app.route('/send_command', methods=['POST', 'OPTIONS'])
 def send_command():
+    global el_tracker
+
     if request.method == 'OPTIONS':
         response = jsonify({'status': 'success'})
         response.headers.add('Access-Control-Allow-Origin', '*')
@@ -178,6 +178,10 @@ def send_command():
             return jsonify({'status': 'success', 'message': f'Command "{command_name}" with argument "{argument}" simulated as sent to EyeLink'}), 200
         else:
             try:
+
+                if el_tracker == None:
+                    initialize_eyelink() # Reinitialize if lost connection
+
                 # Handle opening an EDF file
                 if command_name == 'openEDF' and argument:
                     edf_file = argument + ".EDF"
@@ -211,7 +215,7 @@ def send_command():
                     el_tracker.sendCommand(argument)  
                 elif command_name == 'startTrial' and argument: # starting every trial, takes trialNr as argument
                     # get a reference to the currently active EyeLink connection
-                    el_tracker = pylink.getEYELINK()
+                    # el_tracker = pylink.getEYELINK()
                     # put the tracker in the offline mode first
                     el_tracker.setOfflineMode()
                     # send a "TRIALID" message to mark the start of a trial
