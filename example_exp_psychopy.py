@@ -263,8 +263,9 @@ genv.setCalibrationColors(foreground_color, background_color)
 # genv.setMovieTarget(os.path.join('videos', 'calibVid.mov'))
 
 # Use a picture as the calibration target
-genv.setTargetType('picture')
-genv.setPictureTarget(os.path.join('images', 'fixTarget.bmp'))
+# genv.setTargetType('picture')
+# genv.setPictureTarget(os.path.join('images', 'fixTarget.bmp'))
+genv.setTargetType('circle')
 
 # Configure the size of the calibration target (in pixels)
 # this option applies only to "circle" and "spiral" targets
