@@ -1,5 +1,3 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
 import time
 import re
 import sys  # For sys.exit()
@@ -7,17 +5,13 @@ import os
 import pylink  # Uncomment if connecting to EyeLink
 from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy
 from psychopy import visual, core, event, monitors, gui
-import threading
-# from PIL import Image  # for preparing the Host backdrop image
+
 
 # Set this variable to True to run the task in full screen mode
 # It is easier to debug the script in non-fullscreen mode
 full_screen = True
 
 dummy_mode = False
-
-app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes, allowing all origins by default
 
 EYE_HOST_IP = '100.1.1.1'
 

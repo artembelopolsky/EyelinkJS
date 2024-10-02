@@ -669,7 +669,8 @@ class EyeLinkCoreGraphicsPsychoPy(pylink.EyeLinkCustomDisplay):
                 pass
 
         if line == totlines:
-            bufferv = self._imagebuffer.tostring()
+            # bufferv = self._imagebuffer.tostring()
+            bufferv = self._imagebuffer.tobytes() # tostring is deprecated from python 3.9
             img = Image.frombytes("RGBX", (width, totlines), bufferv)
             self._img = ImageDraw.Draw(img)
             self.draw_cross_hair()
