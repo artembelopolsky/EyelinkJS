@@ -161,7 +161,7 @@ def send_command():
 
             # Set Event Detection Thresholds
             el_tracker.sendCommand('saccade_velocity_threshold = 35')
-            el_tracker.sendCommand('saccade_accelaration_threshold = 9500')         
+            el_tracker.sendCommand('saccade_acceleration_threshold = 9500')         
 
         elif command_name == 'doTrackerSetup':
             # Run calibration in a separate process due to PsychoPy window creation
