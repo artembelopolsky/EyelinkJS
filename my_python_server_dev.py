@@ -77,6 +77,15 @@ def setup_calibration():
         mon = monitors.Monitor('myMonitor', width=53.0, distance=70.0)
         win = visual.Window(fullscr=full_screen, monitor=mon, winType='pyglet', units='pix')
 
+        # Set screen dimensions for proper calibration and data alignment
+        scn_width, scn_height = win.size
+
+        # Pass the display pixel coordinates (left, top, right, bottom) to the tracker
+        el_tracker.sendCommand(f'screen_pixel_coords = 0 0 {scn_width - 1} {scn_height - 1}')
+
+        # Write a DISPLAY_COORDS message to the EDF file, used by Data Viewer
+        el_tracker.sendMessage(f'DISPLAY_COORDS 0 0 {scn_width - 1} {scn_height - 1}')
+
         # Configure a graphics environment for tracker calibration
         genv = EyeLinkCoreGraphicsPsychoPy(el_tracker, win)
         genv.setCalibrationColors((-1, -1, -1), win.color)  # Set calibration colors
@@ -127,8 +136,9 @@ def send_command():
             print(f'Opening EDF file: {edf_filename}')
             el_tracker.openDataFile(edf_filename)
             # Add a header text to the EDF file to identify the current experiment name
-            preamble_text = f'RECORDED BY {os.path.basename(__file__)}'
-            el_tracker.sendCommand('add_file_preamble_text' + preamble_text)
+            script_name = os.path.basename(__file__)
+            preamble_text = 'RECORDED BY ' + script_name                                 
+            el_tracker.sendCommand(f'add_file_preamble_text "{preamble_text}"')
 
         elif command_name == 'configureEyeLink':
             # Get EyeLink version
@@ -174,8 +184,19 @@ def send_command():
             try:
                 pylink.pumpDelay(100)
                 el_tracker.stopRecording()  # Stop recording
+                # send a 'TRIAL_RESULT' message to mark the end of trial for DataViewer
+                el_tracker.sendMessage(f'TRIAL_RESULT {pylink.TRIAL_OK}')
+
             except RuntimeError as error:
                 print(f"Error stopping recording: {error}")
+
+        elif command_name == 'logVariables':
+            try: 
+                # record trial variables to the EDF data file in DataViewer format
+                el_tracker.sendMessage(f'!V TRIAL_VAR condition ')
+            except RuntimeError as error:
+                print (f'Error logging trial variables {error}')
+        
 
         elif command_name == 'sendMessage' and argument:
             try:
