@@ -8,6 +8,8 @@ import pylink  # For connecting to EyeLink
 from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy
 from psychopy import visual, monitors
 import multiprocessing
+from multiprocessing import Queue
+calibration_queue = Queue()
 
 # Global settings
 full_screen = True  # Set to True for full screen, useful for debugging when False
@@ -67,10 +69,12 @@ def parse_command(command):
         return command_name, argument
     return command, None
 
-def setup_calibration():
+def setup_calibration(queue):
     """
     Set up the graphics environment and perform the EyeLink tracker calibration.
     This function opens a PsychoPy window and configures the EyeLink calibration process.
+
+    Communicate the status back via a queue
     """
     try:
         # Put the tracker in offline mode (should be in offline model for every communication except message)
@@ -99,8 +103,13 @@ def setup_calibration():
         el_tracker.doTrackerSetup()  # Run calibration
 
         win.close()  # Close the PsychoPy window
+
+        # Send a success message back to the main process
+        queue.put('calibration_complete')
+
     except Exception as e:
         print(f"Error during calibration setup: {str(e)}")
+        queue.put('calibration_failed')
 
 @app.route('/send_command', methods=['POST', 'OPTIONS'])
 def send_command():
@@ -179,11 +188,22 @@ def send_command():
             el_tracker.sendCommand('saccade_acceleration_threshold = 9500')         
 
         elif command_name == 'doTrackerSetup':
+
             # Run calibration in a separate process due to PsychoPy window creation
-            calibration_process = multiprocessing.Process(target=setup_calibration)
+            calibration_process = multiprocessing.Process(target=setup_calibration, args=(calibration_queue,))
             calibration_process.start()
             calibration_process.join()
             print('Calibration started')
+
+            # Check the status of the calibration process from the queue
+            calibration_status = calibration_queue.get()
+
+            if calibration_status == 'calibration_complete':
+                print ('Calibration completed')
+                return jsonify({'status': 'success', 'message':  'Calibration completed'}), 200
+            else:
+                print('Calibration failed')
+                return jsonify({'status': 'error', 'message': f'Calibration failed'}), 500
 
         elif command_name == 'stopRecording':
             try:
