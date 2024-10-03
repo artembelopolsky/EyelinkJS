@@ -126,6 +126,42 @@ def send_command():
             edf_filename = argument + ".EDF"
             print(f'Opening EDF file: {edf_filename}')
             el_tracker.openDataFile(edf_filename)
+            # Add a header text to the EDF file to identify the current experiment name
+            preamble_text = f'RECORDED BY {os.path.basename(__file__)}'
+            el_tracker.sendCommand('add_file_preamble_text' + preamble_text)
+
+        elif command_name == 'configureEyeLink':
+            # Get EyeLink version
+            vstr = el_tracker.getTrackerVersionString()
+            eyelink_ver = int(vstr.split()[-1].split('.')[0])            
+            print(f'Running experiment on {vstr}, version {eyelink_ver}')
+
+            # Event control for File and Link 
+            file_event_flags = 'LEFT,RIGHT,FIXATION,SACCADE,BLINK,MESSAGE,BUTTON,INPUT'
+            link_event_flags = 'LEFT,RIGHT,FIXATION,SACCADE,BLINK,BUTTON,FIXUPDATE,INPUT'
+            
+            if eyelink_ver > 3:
+                file_sample_flags = 'LEFT,RIGHT,GAZE,HREF,RAW,AREA,HTARGET,GAZERES,BUTTON,STATUS,INPUT'
+                link_sample_flags = 'LEFT,RIGHT,GAZE,GAZERES,AREA,HTARGET,STATUS,INPUT'
+            else:
+                file_sample_flags = 'LEFT,RIGHT,GAZE,HREF,RAW,AREA,GAZERES,BUTTON,STATUS,INPUT'
+                link_sample_flags = 'LEFT,RIGHT,GAZE,GAZERES,AREA,STATUS,INPUT'
+
+            el_tracker.sendCommand('file_event_filter = ' + file_event_flags)
+            el_tracker.sendCommand('file_sample_data = ' + file_sample_flags)
+            el_tracker.sendCommand('link_event_filter = ' + link_event_flags)
+            el_tracker.sendCommand('link_sample_data = ' + link_sample_flags)
+
+            # Set Sample rate, 250, 500, 1000, or 2000, check your tracker specification
+            if eyelink_ver > 2:
+                el_tracker.sendCommand('sample_rate = 1000')
+
+            # Choose a calibration type, H3, HV3, HV5, HV13 (HV = horizontal/vertical),
+            el_tracker.sendCommand('calibration_type = HV9')
+
+            # Set Event Detection Thresholds
+            el_tracker.sendCommand('saccade_velocity_threshold = 35')
+            el_tracker.sendCommand('saccade_accelaration_threshold = 9500')         
 
         elif command_name == 'doTrackerSetup':
             # Run calibration in a separate process due to PsychoPy window creation
