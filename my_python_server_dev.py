@@ -73,6 +73,9 @@ def setup_calibration():
     This function opens a PsychoPy window and configures the EyeLink calibration process.
     """
     try:
+        # Put the tracker in offline mode (should be in offline model for every communication except message)
+        el_tracker.setOfflineMode()
+
         # Set up PsychoPy window and monitor parameters
         mon = monitors.Monitor('myMonitor', width=53.0, distance=70.0)
         win = visual.Window(fullscr=full_screen, monitor=mon, winType='pyglet', units='pix')
@@ -141,6 +144,8 @@ def send_command():
             el_tracker.sendCommand(f'add_file_preamble_text "{preamble_text}"')
 
         elif command_name == 'configureEyeLink':
+            # Put the tracker in offline mode (should be in offline model for every communication except message)
+            el_tracker.setOfflineMode()
             # Get EyeLink version
             vstr = el_tracker.getTrackerVersionString()
             eyelink_ver = int(vstr.split()[-1].split('.')[0])            
@@ -206,6 +211,8 @@ def send_command():
 
         elif command_name == 'sendCommand' and argument:
             try:
+                # Put the tracker in offline mode (should be in offline model for every communication except message)
+                el_tracker.setOfflineMode()
                 el_tracker.sendCommand(argument)
             except RuntimeError as error:
                 print(f"Error sending command: {error}")
@@ -213,6 +220,7 @@ def send_command():
         elif command_name == 'startRecording' and argument:
             try:
                 # Start recording each trial and send TRIALID
+                # Put the tracker in offline mode (should be in offline model for every communication except message)            
                 el_tracker.setOfflineMode()
                 msg_trialID = f'TRIALID {argument}'
                 el_tracker.sendMessage(msg_trialID)
@@ -223,6 +231,9 @@ def send_command():
                 print(f"Error starting recording: {error}")
 
         elif command_name == 'terminateTask':
+            # Put the tracker in offline mode (should be in offline model for every communication except message)
+            el_tracker.setOfflineMode()
+
             if edf_filename:
                 try:
                     el_tracker.closeDataFile()  # Close EDF file
@@ -232,6 +243,7 @@ def send_command():
                     print(f"Error receiving EDF file: {error}")
             else:
                 print("No EDF file to download.")
+            
             el_tracker.close()  # Close EyeLink connection
 
         else:

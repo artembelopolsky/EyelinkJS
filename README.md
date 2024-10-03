@@ -21,3 +21,13 @@ python -m http.server
 ```
 
 5. Go to localhost:8000 in your browser and send test commands to EyeLink
+
+
+### Testing
+To test the EyeLinkJS API you can enter the following commands in the "send command" dialogbox in the browser:
+
+1. openEDF(myfile) -- opens myfile.edf on the EyeLink host computer
+
+2. configureEyeLink() -- runs configuration settings for your desired setup (such sampling rate, events to store, saccade detection algorithm parameters)
+
+
