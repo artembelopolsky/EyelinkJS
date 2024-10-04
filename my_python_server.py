@@ -155,6 +155,9 @@ def send_command():
 
         elif command_name == 'startRecording' and argument:
             try:
+                # get a reference to the currently active EyeLink connection
+                el_tracker = pylink.getEYELINK()
+
                 # Start recording each trial and send TRIALID
                 el_tracker.setOfflineMode()
                 msg_trialID = f'TRIALID {argument}'
@@ -166,6 +169,13 @@ def send_command():
                 print(f"Error starting recording: {error}")
 
         elif command_name == 'terminateTask':
+
+            el_tracker = pylink.getEYELINK()  # Get the current active tracker object
+            el_tracker.setOfflineMode()
+             # Clear the Host PC screen and wait for 500 ms
+            el_tracker.sendCommand('clear_screen 0')
+            pylink.msecDelay(500)
+
             if edf_filename:
                 try:
                     el_tracker.closeDataFile()  # Close EDF file
