@@ -101,7 +101,7 @@ def setup_calibration(queue):
         # Use the PsychoPy window for calibration
         pylink.openGraphicsEx(genv)
         el_tracker.doTrackerSetup()  # Run calibration
-
+       
         win.close()  # Close the PsychoPy window
 
         # Send a success message back to the main process
@@ -239,6 +239,13 @@ def send_command():
 
         elif command_name == 'startRecording' and argument:
             try:
+                if not el_tracker or not el_tracker.isConnected():
+                    try:
+                        el_tracker = pylink.EyeLink(EYE_HOST_IP)
+                    except RuntimeError as error:
+                        print(f'Error reconnecting to EyeLink: {error}')
+                        return jsonify({'status': 'error', 'message': 'Failed to reconnect to EyeLink'}), 500
+
                 # Start recording each trial and send TRIALID
                 # Put the tracker in offline mode (should be in offline model for every communication except message)            
                 el_tracker.setOfflineMode()
@@ -251,13 +258,19 @@ def send_command():
                 print(f"Error starting recording: {error}")
 
         elif command_name == 'terminateTask':
+
+            if not el_tracker or not el_tracker.isConnected():
+                try:
+                    el_tracker = pylink.EyeLink(EYE_HOST_IP)
+                except RuntimeError as error:
+                    print(f'Error reconnecting to EyeLink: {error}')
+                    return jsonify({'status': 'error', 'message': 'Failed to reconnect to EyeLink'}), 500
+            
             # Put the tracker in offline mode (should be in offline model for every communication except message)
-            el_tracker.setOfflineMode()
+            el_tracker.setOfflineMode()                    
 
             if edf_filename:
                 try:
-                    # get a reference to the currently active EyeLink connection
-                    el_tracker = pylink.getEYELINK()
                     el_tracker.closeDataFile()  # Close EDF file
                     # Download the EDF data file from the Host PC to a local data folder
                     el_tracker.receiveDataFile(edf_filename, os.path.join('./results', edf_filename))
