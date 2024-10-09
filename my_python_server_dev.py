@@ -256,6 +256,8 @@ def send_command():
 
             if edf_filename:
                 try:
+                    # get a reference to the currently active EyeLink connection
+                    el_tracker = pylink.getEYELINK()
                     el_tracker.closeDataFile()  # Close EDF file
                     # Download the EDF data file from the Host PC to a local data folder
                     el_tracker.receiveDataFile(edf_filename, os.path.join('./results', edf_filename))
