@@ -61,12 +61,14 @@ def setup_calibration(queue):
         
         genv = EyeLinkCoreGraphicsPsychoPy(el_tracker, win)
         genv.setCalibrationColors((-1, -1, -1), win.color)
+        # genv.setPictureTarget(os.path.join('images', 'fixTarget.bmp'))
         genv.setTargetType('circle')
         pylink.openGraphicsEx(genv)
         el_tracker.doTrackerSetup()
         
-        win.close()
+        win.close() # Close the PsychoPy window         
         queue.put('calibration_complete')
+
     except Exception as e:
         print(f"Error during calibration setup: {str(e)}")
         queue.put('calibration_failed')
@@ -200,7 +202,9 @@ def terminate_task():
     ensure_eyelink_connection()
     if edf_filename:
         el_tracker.closeDataFile()
+        print('Transferring EDF data file...')
         el_tracker.receiveDataFile(edf_filename, os.path.join('./results', edf_filename))
+        print('Completed transferring EDF data file')
 
 def close_eyelink_connection():
     ensure_eyelink_connection()
