@@ -5,7 +5,7 @@ import re
 import time
 import pylink  # For connecting to EyeLink
 from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy
-from psychopy import visual, monitors
+from psychopy import visual, monitors, event
 import multiprocessing
 from multiprocessing import Queue
 
@@ -46,6 +46,20 @@ def parse_command(command):
         return match.group(1), match.group(2).strip('"')
     return command, None
 
+
+def show_msg(win, text, color, scn_width, wait_for_keypress=True):
+    """ Show task instructions on screen"""
+
+    msg = visual.TextStim(win, text,
+                          color,
+                          wrapWidth=scn_width/2)
+    msg.draw()
+    win.flip()
+
+    # wait indefinitely, terminates upon any key press
+    if wait_for_keypress:
+        event.waitKeys()        
+
 def setup_calibration(queue):
     """Set up graphics environment and perform EyeLink calibration."""
     global el_tracker
@@ -68,6 +82,10 @@ def setup_calibration(queue):
         # genv.setTargetType('circle') # display a standard circle fixation point
 
         pylink.openGraphicsEx(genv)
+        
+        # Show calibration instructions
+        show_msg(win, 'press ENTER twice to calibrate tracker', color=genv.getForegroundColor(), scn_width=scn_width)
+        
         el_tracker.doTrackerSetup()
         
         win.close() # Close the PsychoPy window         
