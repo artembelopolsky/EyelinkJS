@@ -31,11 +31,15 @@ def initialize_eyelink():
         print("Running in dummy mode, EyeLink will not be connected")
         el_tracker = None
     else:
-        try:
-            el_tracker = pylink.EyeLink(EYE_HOST_IP)
-            print("EyeLink connected")
-        except RuntimeError as error:
-            print(f'Error connecting to EyeLink: {error}')
+        
+        if el_tracker is None or not el_tracker.isConnected():
+            try:
+                el_tracker = pylink.EyeLink(EYE_HOST_IP)
+                print("EyeLink connected")
+            except RuntimeError as error:
+                print(f'Error connecting to EyeLink: {error}')
+        else:
+            print('EyeLink connection is already active')
 
 def setup_results_folder():
     """
@@ -207,6 +211,8 @@ def send_command():
 
         elif command_name == 'stopRecording':
             try:
+                initialize_eyelink()
+
                 pylink.pumpDelay(100)
                 el_tracker.stopRecording()  # Stop recording
                 # send a 'TRIAL_RESULT' message to mark the end of trial for DataViewer
@@ -239,13 +245,8 @@ def send_command():
 
         elif command_name == 'startRecording' and argument:
             try:
-                if not el_tracker or not el_tracker.isConnected():
-                    try:
-                        el_tracker = pylink.EyeLink(EYE_HOST_IP)
-                    except RuntimeError as error:
-                        print(f'Error reconnecting to EyeLink: {error}')
-                        return jsonify({'status': 'error', 'message': 'Failed to reconnect to EyeLink'}), 500
-
+                initialize_eyelink()
+                
                 # Start recording each trial and send TRIALID
                 # Put the tracker in offline mode (should be in offline model for every communication except message)            
                 el_tracker.setOfflineMode()
@@ -259,12 +260,7 @@ def send_command():
 
         elif command_name == 'terminateTask':
 
-            if not el_tracker or not el_tracker.isConnected():
-                try:
-                    el_tracker = pylink.EyeLink(EYE_HOST_IP)
-                except RuntimeError as error:
-                    print(f'Error reconnecting to EyeLink: {error}')
-                    return jsonify({'status': 'error', 'message': 'Failed to reconnect to EyeLink'}), 500
+            initialize_eyelink()
             
             # Put the tracker in offline mode (should be in offline model for every communication except message)
             el_tracker.setOfflineMode()                    
@@ -279,6 +275,9 @@ def send_command():
             else:
                 print("No EDF file to download.")
             
+            
+
+        elif command_name == 'closeEyeLinkConnection':
             el_tracker.close()  # Close EyeLink connection
 
         else:
