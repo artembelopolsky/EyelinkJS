@@ -1,8 +1,9 @@
+#(C) 2024 Artem Belopolsky. All rights reserved. 
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 import re
-import time
 import pylink  # For connecting to EyeLink
 from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy
 from psychopy import visual, monitors, event
@@ -128,6 +129,9 @@ def send_command():
             calibration_process.join()
             return handle_calibration_status()
 
+        elif command_name == 'startRecording' and argument:
+            start_recording(argument)
+
         elif command_name == 'stopRecording':
             stop_recording()
 
@@ -138,10 +142,7 @@ def send_command():
             el_tracker.sendMessage(argument)
 
         elif command_name == 'sendCommand' and argument:
-            send_tracker_command(argument)
-
-        elif command_name == 'startRecording' and argument:
-            start_recording(argument)
+            send_tracker_command(argument)        
 
         elif command_name == 'terminateTask':
             terminate_task()
@@ -205,9 +206,9 @@ def stop_recording():
     el_tracker.stopRecording()
     el_tracker.sendMessage(f'TRIAL_RESULT {pylink.TRIAL_OK}')
 
-def log_trial_variables():
+def log_trial_variables(condition, value):
     ensure_eyelink_connection()
-    el_tracker.sendMessage(f'!V TRIAL_VAR condition')
+    el_tracker.sendMessage(f'!V TRIAL_VAR {condition} {value}')
 
 def send_tracker_command(command):
     ensure_eyelink_connection()
