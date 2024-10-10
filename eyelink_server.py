@@ -61,8 +61,12 @@ def setup_calibration(queue):
         
         genv = EyeLinkCoreGraphicsPsychoPy(el_tracker, win)
         genv.setCalibrationColors((-1, -1, -1), win.color)
-        # genv.setPictureTarget(os.path.join('images', 'fixTarget.bmp'))
-        genv.setTargetType('circle')
+
+        # Use image of fixation circle
+        genv.setTargetType('picture')
+        genv.setPictureTarget(os.path.join('images', 'fixTarget.bmp'))
+        # genv.setTargetType('circle') # display a standard circle fixation point
+
         pylink.openGraphicsEx(genv)
         el_tracker.doTrackerSetup()
         
